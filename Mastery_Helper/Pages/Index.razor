@@ -1,7 +1,9 @@
 ﻿@page "/"
+@page "/{SummonerName}"
 @using System
 @using RiotSharp
 @using System.Linq
+@inject NavigationManager NavigationManager
 <!-- CSS only -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
 <div class="top-row px-4" style="padding-left: 0px; padding-right: 0px; border-bottom: 1px;">
@@ -10,7 +12,7 @@
         <option>@RiotSharp.Misc.Region.Euw</option>
         <option>@RiotSharp.Misc.Region.Na</option>
     </select>
-    <input type="text" placeholder="summoner name" name="summonerNameInput" class="e-control e-timepicker e-lib e-input myInput" @onchange="@summonerNameInputChanged" @onkeyup="@EnterKeyUp" />
+    <input autocomplete="on" type="text" placeholder="summoner name" name="summonerNameInput" class="e-control e-timepicker e-lib e-input myInput" @onchange="@summonerNameInputChanged" @onkeyup="@EnterKeyUp" />
     <button class="btn myDark" @onclick="GetSummoner" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> submit </button>
 </div>
 <div class="content px-4">
@@ -52,7 +54,7 @@
                                     Points per aram
                                 </td>
                                 <td>
-                                    <input type="number" min="50" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="pointsPerAram" style="max-width: 100px;"/>
+                                    <input type="number" min="50" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="pointsPerAram" style="max-width: 100px;" />
                                 </td>
                                 <td>
                                     It would take: @(pointsRemaining/pointsPerAram) aram games
@@ -63,7 +65,7 @@
                                     Points per normal
                                 </td>
                                 <td>
-                                    <input type="number" min="200" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="pointsPerNormal" style="max-width: 100px;"/>
+                                    <input type="number" min="200" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="pointsPerNormal" style="max-width: 100px;" />
                                 </td>
                                 <td>
                                     It would take: @(pointsRemaining / pointsPerNormal) normal games
@@ -82,7 +84,7 @@
                                     Arams played daily
                                 </td>
                                 <td>
-                                    <input type="number" min="" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="aramsPlayedDaily" style="max-width: 100px;"/>
+                                    <input type="number" min="" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="aramsPlayedDaily" style="max-width: 100px;" />
                                 </td>
                                 <td>
                                     Days left: @if (aramsPlayedDaily > 0)
@@ -96,7 +98,7 @@
                                     Normals played daily
                                 </td>
                                 <td>
-                                    <input type="number" min="" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="normalsPlayedDaily" style="max-width:100px;"/>
+                                    <input type="number" min="" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="normalsPlayedDaily" style="max-width:100px;" />
                                 </td>
                                 <td>
                                     Days left: @if (normalsPlayedDaily > 0)
@@ -152,14 +154,15 @@
     public RiotApi api = RiotApi.GetInstance(apiKey, 20, 100);
 
     string currentSummonerId;
-    string summonerName = null;
+    [Parameter]
+    public string SummonerName { get; set; } = null;
     RiotSharp.Endpoints.SummonerEndpoint.Summoner summoner;
     string summonerIconUrl = null;
     RiotSharp.Misc.Region selectedRegion = RiotSharp.Misc.Region.Eune;
 
     static List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery> championMasteries = new List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery>();
-    RiotSharp.Endpoints.StaticDataEndpoint.Champion.ChampionListStatic championList;
-    string latestVersion = null;
+    static RiotSharp.Endpoints.StaticDataEndpoint.Champion.ChampionListStatic championList;
+    static string latestVersion = null;
 
     int pointsPerAram = 700;
     int pointsPerNormal = 1000;
@@ -181,17 +184,21 @@
         {
             Console.WriteLine($"failed initialising index page {e}");
         }
-
+        Console.WriteLine("init");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-
             try
             {
+                Console.WriteLine("first render");
+                if (!string.IsNullOrEmpty(SummonerName))
+                {
 
+                    GetSummoner();
+                }
             }
             catch (Exception e)
             {
@@ -199,6 +206,7 @@
             }
         }
 
+        Console.WriteLine("render");
     }
 
     async Task GetMasteryScores()
@@ -221,7 +229,8 @@
         try
         {
             Console.WriteLine("Submit pressed");
-            summoner = await api.Summoner.GetSummonerByNameAsync(selectedRegion, summonerName);
+            NavigationManager.NavigateTo($"/{SummonerName}");
+            summoner = await api.Summoner.GetSummonerByNameAsync(selectedRegion, SummonerName);
             currentSummonerId = summoner.Id;
             summonerIconUrl = "http://ddragon.leagueoflegends.com/cdn/" + $"{latestVersion}/img/profileicon/{summoner.ProfileIconId}.png";
             Console.WriteLine($"{summoner.ProfileIconId}");
@@ -244,7 +253,7 @@
     public void summonerNameInputChanged(ChangeEventArgs args)
     {
         Console.WriteLine($"Called summonerNameInputChanged");
-        summonerName = args.Value.ToString();
+        SummonerName = args.Value.ToString();
     }
 
 
@@ -317,4 +326,7 @@
             return "oi-sort-descending";
         }
     }
+
+    //page where I input current champions available and it sorts tham based on points
+    //Leaderboard page with me and my friends
 }
