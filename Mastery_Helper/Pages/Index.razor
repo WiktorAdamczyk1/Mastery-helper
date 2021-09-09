@@ -10,7 +10,7 @@
             <option>@RiotSharp.Misc.Region.Euw</option>
             <option>@RiotSharp.Misc.Region.Na</option>
         </select>
-        <input type="text" placeholder="summoner name" name="summonerNameInput" class="e-control e-timepicker e-lib e-input myDark" @onchange="@summonerNameInputChanged" @onkeyup="@EnterKeyUp" style="background-color: #181a1b; color: whitesmoke; margin-left: 3px; margin-right: 3px; border-width: 1px; border-color: #373b3e; text-align:left"/>
+        <input type="text" placeholder="summoner name" name="summonerNameInput" class="e-control e-timepicker e-lib e-input myInput" @onchange="@summonerNameInputChanged" @onkeyup="@EnterKeyUp"/>
         <button class="btn myDark" @onclick="GetSummoner" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> submit </button>
     </div>
     <div class="content px-4">
@@ -50,7 +50,7 @@
                             Points per aram
                         </td>
                         <td>
-                            <input type="number" min="50" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input btn myDark" @bind="pointsPerAram" style="background-color: #181a1b; color: whitesmoke; margin-left: 3px; margin-right: 3px; border-width: 1px; border-color: #373b3e; text-align:left"/>
+                            <input type="number" min="50" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="pointsPerAram"/>
                         </td>
                         <td>
                             It would take: @(pointsRemaining/pointsPerAram) aram games
@@ -59,7 +59,7 @@
                             Arams played daily
                         </td>
                         <td>
-                            <input type="number" min="" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input btn myDark" @bind="aramsPlayedDaily" style="background-color: #181a1b; color: whitesmoke; margin-left: 3px; margin-right: 3px; border-width: 1px; border-color: #373b3e; text-align:left"/>
+                            <input type="number" min="" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="aramsPlayedDaily"/>
                         </td>
                         <td>
                             Days left: @if (aramsPlayedDaily > 0)
@@ -73,7 +73,7 @@
                             Points per normal
                         </td>
                         <td>
-                            <input type="number" min="200" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input btn myDark" @bind="pointsPerNormal" style="background-color: #181a1b; color: whitesmoke; margin-left: 3px; margin-right: 3px; border-width: 1px; border-color: #373b3e; text-align:left"/>
+                            <input type="number" min="200" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="pointsPerNormal"/>
                         </td>
                         <td>
                             It would take: @(pointsRemaining / pointsPerNormal) normal games
@@ -82,7 +82,7 @@
                             Normals played daily
                         </td>
                         <td>
-                            <input type="number" min="" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input btn myDark" @bind="normalsPlayedDaily" style="background-color: #181a1b; color: whitesmoke; margin-left: 3px; margin-right: 3px; border-width: 1px; border-color: #373b3e; text-align:left"/>
+                            <input type="number" min="" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="normalsPlayedDaily"/>
                         </td>
                         <td>
                             Days left: @if (normalsPlayedDaily > 0)

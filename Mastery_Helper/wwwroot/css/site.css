@@ -24,6 +24,23 @@ a, .btn-link {
     text-align: left;
 }
 
+.myInput {
+    background-color: #181a1b;
+    color: whitesmoke;
+    margin-left: 3px;
+    margin-right: 3px;
+    border-width: 1px;
+    border-color: #373b3e;
+    text-align: left;
+    border-style: solid;
+    font-weight: 400;
+    line-height: 1.5;
+    vertical-align: middle;
+    cursor: pointer;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    border-radius: .25rem;
+}
 app {
     position: relative;
     display: flex;
