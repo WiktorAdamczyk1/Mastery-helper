@@ -6,7 +6,7 @@
 @inject NavigationManager NavigationManager
 <!-- CSS only -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
-<div class="top-row px-4" style="padding-left: 0px; padding-right: 0px; border-bottom: 1px;">
+<div class="top-row px-4" style="border-width:2px; border-color: #373b3e">
     <select class="btn selectpicker myDark" data-live-search="true" @bind="selectedRegion" title="Status" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left; text-transform:uppercase">
         <option>@RiotSharp.Misc.Region.Eune</option>
         <option>@RiotSharp.Misc.Region.Euw</option>
@@ -17,7 +17,7 @@
 </div>
 <div class="content px-4">
 
-    @if (!string.IsNullOrEmpty(currentSummonerId))
+    @if (!string.IsNullOrEmpty(currentSummonerId)) // Summoner info Header
     {
         <div style="text-align:center; margin:auto;">
             <div style="width:80px; display:inline-block;">
@@ -43,12 +43,11 @@
     else
     {
         <div class="text-center">
-            <h4> Least amount of points required to achieve level 5 on every champion: @CalculateRemainingPoints() </h4>
-            <div style="text-align:center; margin:auto; max-width:100%;">
+            <h4> Least amount of points required to achieve level 5 on every champion: @CalculateRemainingPoints() (@(CountAmountOfChampionsOnLevel(5)+CountAmountOfChampionsOnLevel(6)+CountAmountOfChampionsOnLevel(7))/@championList.Champions.Count())</h4>
+            <div style="text-align: center; margin: auto; max-width: 100%; background-color: #1d2021; border-color: #454d55; border-width: 1px; border-style: solid; width: 65%;">
                 <div style="width: auto; display: inline-block; margin-right: 0px; max-width: 100%; overflow-x: auto;">
                     <table class="table" style="color: whitesmoke; width: auto; border-color: #454d55;">
                         <tbody style="border-style:hidden">
-                            <text>
                             <tr style="overflow-x:auto">
                                 <td>
                                     Points per aram
@@ -71,14 +70,12 @@
                                     It would take: @(pointsRemaining / pointsPerNormal) normal games
                                 </td>
                             </tr>
-                            </text>
                         </tbody>
                     </table>
                 </div>
                 <div style="display: inline-block; max-width: 100%; overflow-x: auto;">
                     <table class="table" style="width: auto; color: whitesmoke; margin-left: 0px; overflow-x: auto; border-color: #454d55;">
-                        <tbody>
-                            <text>
+                        <tbody style="border-style:hidden">
                             <tr style="overflow-x:auto">
                                 <td>
                                     Arams played daily
@@ -107,14 +104,22 @@
                                     }
                                 </td>
                             </tr>
-                            </text>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+        <div class="text-center">
+            <div class="text-center m-2" style="background-color: #1d2021; border-color: #454d55; border-width: 1px; border-style: solid; padding: 5px; margin: 15px; width: 65%; display: inline-block; ">
+                <div style="display: inline-block;">lvl 5: @CountAmountOfChampionsOnLevel(5)</div>
+
+                <div style="margin-left: 10%; margin-right: 10%; display: inline-block;">lvl 6: @CountAmountOfChampionsOnLevel(6)</div>
+
+                <div style="display: inline-block;">lvl 7: @CountAmountOfChampionsOnLevel(7)</div>
+            </div>
+        </div><br>
         <div style="max-width: 100%; overflow-x: auto;">
-            <table class="table table-dark" style="border-color: #454d55; border-style: solid; border-width: 1px;">
+            <table class="table table-dark" style="--bs-table-bg: #1d2021; border-color: #454d55; border-style: solid; border-width: 1px; ">
                 <thead>
                     <tr>
                         <th class="sort-th" @onclick="@(() => SortTable("ChampionId"))">
@@ -139,9 +144,17 @@
                             <td>@GetChampionName(championMasteries[i].ChampionId)</td>
                             <td>@championMasteries[i].ChampionLevel</td>
                             <td>@championMasteries[i].ChampionPoints</td>
-                            <td>@championMasteries[i].ChampionPointsUntilNextLevel</td>
+                            <td>
+                                @if (@championMasteries[i].ChampionPointsUntilNextLevel == 0)
+                                {
+                                    <text> N/A </text>
+                                }
+                                else
+                                {
+                                    @championMasteries[i].ChampionPointsUntilNextLevel
+                                }
+                            </td>
                         </tr>
-
                     }
                 </tbody>
             </table>
@@ -197,7 +210,7 @@
                 if (!string.IsNullOrEmpty(SummonerName))
                 {
 
-                    GetSummoner();
+                    await GetSummoner();
                 }
             }
             catch (Exception e)
@@ -205,15 +218,21 @@
                 Console.WriteLine($"failed first render of index page {e}");
             }
         }
-
-        Console.WriteLine("render");
+        else
+        {
+            //if (NavigationManager.Uri != $"{NavigationManager.BaseUri}{SummonerName}")
+            //{
+            //    await GetSummoner();
+            //}
+        }
+        Console.WriteLine($"render {SummonerName}");
     }
 
     async Task GetMasteryScores()
     {
         try
         {
-            championMasteries = await api.ChampionMastery.GetChampionMasteriesAsync(RiotSharp.Misc.Region.Eune, currentSummonerId);
+            championMasteries = await api.ChampionMastery.GetChampionMasteriesAsync(selectedRegion, currentSummonerId);
             Console.WriteLine("Mastery scores received");
 
         }
@@ -229,7 +248,7 @@
         try
         {
             Console.WriteLine("Submit pressed");
-            NavigationManager.NavigateTo($"/{SummonerName}");
+            //NavigationManager.NavigateTo($"/{SummonerName}");
             summoner = await api.Summoner.GetSummonerByNameAsync(selectedRegion, SummonerName);
             currentSummonerId = summoner.Id;
             summonerIconUrl = "http://ddragon.leagueoflegends.com/cdn/" + $"{latestVersion}/img/profileicon/{summoner.ProfileIconId}.png";
@@ -325,6 +344,16 @@
         {
             return "oi-sort-descending";
         }
+    }
+
+    private int CountAmountOfChampionsOnLevel(int lvl)
+    {
+        int count = 0;
+        for (int i = 0; i < championMasteries.Count(); i++)
+        {
+            if (championMasteries[i].ChampionLevel == lvl) count++;
+        }
+        return count;
     }
 
     //page where I input current champions available and it sorts tham based on points
