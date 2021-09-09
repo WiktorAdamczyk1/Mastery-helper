@@ -153,7 +153,8 @@ app {
 
 @media (max-width: 767.98px) {
     .main .top-row:not(.auth) {
-        display: none;
+        position: sticky;
+        top: 0;
     }
 
     .main .top-row.auth {
