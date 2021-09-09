@@ -40,7 +40,10 @@ a, .btn-link {
     padding: .375rem .75rem;
     font-size: 1rem;
     border-radius: .25rem;
+    max-width:175px;
+    min-width:40px;
 }
+
 app {
     position: relative;
     display: flex;
