@@ -8,18 +8,19 @@ namespace Mastery_Helper.Data
 {
     public class RegionModel : ComponentBase
     {
-        RiotSharp.Misc.Region _selectedRegion;
+        RiotSharp.Misc.Region _selectedRegion = RiotSharp.Misc.Region.Eune;
         public RiotSharp.Misc.Region SelectedRegion 
         {
             get { return _selectedRegion; }
             set 
             {
+                Console.WriteLine($"region set to {value.ToString()}");
                 _selectedRegion = value;
                 if(SelectedRegionEndpoint != value.ToString()) SelectedRegionEndpoint = value.ToString();
             }
         }
 
-        string _selectedRegionEndpoint = "EUNE";
+        string _selectedRegionEndpoint = "Eune";
 
         [Parameter]
         public string SelectedRegionEndpoint 
@@ -30,6 +31,7 @@ namespace Mastery_Helper.Data
             } 
             set 
             {
+                Console.WriteLine($"endpoint set to {value}");
                 _selectedRegionEndpoint = value;
                 if(value != null && SelectedRegion != (RiotSharp.Misc.Region)Enum.Parse(typeof(RiotSharp.Misc.Region), value, true)) SelectedRegion = (RiotSharp.Misc.Region)Enum.Parse(typeof(RiotSharp.Misc.Region), value, true);
             } 
@@ -38,7 +40,7 @@ namespace Mastery_Helper.Data
 
         protected async override Task OnInitializedAsync()
         {
-            SelectedRegion = await ConvertStringToRegion(SelectedRegionEndpoint);
+            SelectedRegion = await ConvertStringToRegion(_selectedRegionEndpoint);
         }
 
         private Task<RiotSharp.Misc.Region> ConvertStringToRegion(string regionString)
