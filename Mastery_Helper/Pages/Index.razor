@@ -43,7 +43,7 @@
     else
     {
         <div class="text-center">
-            <h4> Least amount of points required to achieve level 5 on every champion: @CalculateRemainingPoints() (@(CountAmountOfChampionsOnLevel(5)+CountAmountOfChampionsOnLevel(6)+CountAmountOfChampionsOnLevel(7))/@championList.Champions.Count())</h4>
+            <h4> Least amount of points required to achieve level 5 on every champion: @CalculateRemainingPoints() (@(championsOnLevel[5]+ championsOnLevel[6] + championsOnLevel[7])/@championList.Champions.Count())</h4>
             <div style="text-align: center; margin: auto; max-width: 100%; background-color: #1d2021; border-color: #454d55; border-width: 1px; border-style: solid; width: 65%;">
                 <div style="width: auto; display: inline-block; margin-right: 0px; max-width: 100%; overflow-x: auto;">
                     <table class="table" style="color: whitesmoke; width: auto; border-color: #454d55;">
@@ -111,11 +111,13 @@
         </div>
         <div class="text-center">
             <div class="text-center m-2" style="background-color: #1d2021; border-color: #454d55; border-width: 1px; border-style: solid; padding: 5px; margin: 15px; width: 65%; display: inline-block; ">
-                <div style="display: inline-block;">lvl 5: @CountAmountOfChampionsOnLevel(5)</div>
 
-                <div style="margin-left: 10%; margin-right: 10%; display: inline-block;">lvl 6: @CountAmountOfChampionsOnLevel(6)</div>
+                @for (int i = 0; i < championsOnLevel.Count(); i++)
+                {
+                    <div style="margin-left: 3%; margin-right: 3%; display: inline-block;">lvl @i: @championsOnLevel[i]</div>
+                }
 
-                <div style="display: inline-block;">lvl 7: @CountAmountOfChampionsOnLevel(7)</div>
+
             </div>
         </div><br>
         <div style="max-width: 100%; overflow-x: auto;">
@@ -182,6 +184,7 @@
     int aramsPlayedDaily = 1;
     int normalsPlayedDaily = 1;
     int pointsRemaining = 0;
+    int[] championsOnLevel = new int[8];
 
     private bool? isSortedAscending = null;
     private string activeSortColumn = null;
@@ -255,6 +258,7 @@
             Console.WriteLine($"{summoner.ProfileIconId}");
             Console.WriteLine($"Summoner {summoner.Name} with id: {currentSummonerId} received");
             await GetMasteryScores();
+            await CountAmountOfChampionsOnEachLevel();
         }
         catch (Exception e)
         {
@@ -346,14 +350,25 @@
         }
     }
 
-    private int CountAmountOfChampionsOnLevel(int lvl)
+    private Task CountAmountOfChampionsOnEachLevel()
     {
-        int count = 0;
+        for (int i = 0; i < championsOnLevel.Count(); i++)
+        {
+            championsOnLevel[i] = 0;
+        }
+
         for (int i = 0; i < championMasteries.Count(); i++)
         {
-            if (championMasteries[i].ChampionLevel == lvl) count++;
+            championsOnLevel[championMasteries[i].ChampionLevel]++;
         }
-        return count;
+
+        int amountOfChampionsPlayed = 0;
+        for (int i = 1; i < championsOnLevel.Count(); i++)
+        {
+            amountOfChampionsPlayed += championsOnLevel[i];
+        }
+        championsOnLevel[0] = championList.Champions.Count() - amountOfChampionsPlayed;
+        return Task.CompletedTask;
     }
 
     //page where I input current champions available and it sorts tham based on points
