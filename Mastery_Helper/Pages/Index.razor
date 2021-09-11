@@ -1,5 +1,6 @@
 ﻿@page "/"
-@page "/{SummonerName}"
+@page "/{SelectedRegionEndpoint}/{SummonerName}"
+@inherits Data.RegionModel
 @using System
 @using RiotSharp
 @using System.Linq
@@ -7,7 +8,7 @@
 <!-- CSS only -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
 <div class="top-row px-4" style="border-width:2px; border-color: #373b3e; z-index:5;">
-    <select class="btn selectpicker myDark" data-live-search="true" @bind="selectedRegion" title="Status" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left; text-transform:uppercase">
+    <select class="btn selectpicker myDark" data-live-search="true" @bind="SelectedRegion" title="Status" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left; text-transform:uppercase">
         <option>@RiotSharp.Misc.Region.Eune</option>
         <option>@RiotSharp.Misc.Region.Euw</option>
         <option>@RiotSharp.Misc.Region.Na</option>
@@ -173,7 +174,6 @@
     public string SummonerName { get; set; } = null;
     RiotSharp.Endpoints.SummonerEndpoint.Summoner summoner;
     string summonerIconUrl = null;
-    RiotSharp.Misc.Region selectedRegion = RiotSharp.Misc.Region.Eune;
 
     static List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery> championMasteries = new List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery>();
     static RiotSharp.Endpoints.StaticDataEndpoint.Champion.ChampionListStatic championList;
@@ -212,7 +212,6 @@
                 Console.WriteLine("first render");
                 if (!string.IsNullOrEmpty(SummonerName))
                 {
-
                     await GetSummoner();
                 }
             }
@@ -235,7 +234,7 @@
     {
         try
         {
-            championMasteries = await api.ChampionMastery.GetChampionMasteriesAsync(selectedRegion, currentSummonerId);
+            championMasteries = await api.ChampionMastery.GetChampionMasteriesAsync(SelectedRegion, currentSummonerId);
             Console.WriteLine("Mastery scores received");
 
         }
@@ -251,14 +250,15 @@
         try
         {
             Console.WriteLine("Submit pressed");
-            //NavigationManager.NavigateTo($"/{SummonerName}");
-            summoner = await api.Summoner.GetSummonerByNameAsync(selectedRegion, SummonerName);
+            NavigationManager.NavigateTo($"{NavigationManager.BaseUri}{SelectedRegionEndpoint}/{SummonerName}");
+            summoner = await api.Summoner.GetSummonerByNameAsync(SelectedRegion, SummonerName);
             currentSummonerId = summoner.Id;
             summonerIconUrl = "http://ddragon.leagueoflegends.com/cdn/" + $"{latestVersion}/img/profileicon/{summoner.ProfileIconId}.png";
             Console.WriteLine($"{summoner.ProfileIconId}");
             Console.WriteLine($"Summoner {summoner.Name} with id: {currentSummonerId} received");
             await GetMasteryScores();
             await CountAmountOfChampionsOnEachLevel();
+            StateHasChanged();
         }
         catch (Exception e)
         {
