@@ -6,7 +6,7 @@
 @inject NavigationManager NavigationManager
 <!-- CSS only -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
-<div class="top-row px-4" style="border-width:2px; border-color: #373b3e">
+<div class="top-row px-4" style="border-width:2px; border-color: #373b3e; z-index:5;">
     <select class="btn selectpicker myDark" data-live-search="true" @bind="selectedRegion" title="Status" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left; text-transform:uppercase">
         <option>@RiotSharp.Misc.Region.Eune</option>
         <option>@RiotSharp.Misc.Region.Euw</option>
@@ -120,7 +120,7 @@
         </div><br>
         <div style="max-width: 100%; overflow-x: auto;">
             <table class="table table-dark" style="--bs-table-bg: #1d2021; border-color: #454d55; border-style: solid; border-width: 1px; ">
-                <thead>
+                <thead style="border-bottom-width:3px; border-style:solid; border-color:#454d55;">
                     <tr>
                         <th class="sort-th" @onclick="@(() => SortTable("ChampionId"))">
                             Champion <span class="oi @(SetSortIcon("ChampionId"))"></span>
@@ -357,5 +357,6 @@
     }
 
     //page where I input current champions available and it sorts tham based on points
-    //Leaderboard page with me and my friends
+    //Leaderboard page with me and my friends ->  tracking page using localbrowserstorage that will compare ppl you entered there
+    //region endpoint using models
 }
