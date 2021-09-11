@@ -197,6 +197,7 @@
         {
             latestVersion = api.StaticData.Versions.GetAllAsync().Result[0];
             championList = await api.StaticData.Champions.GetAllAsync(latestVersion);
+            SelectedRegion = RiotSharp.Misc.Region.Eune;
         }
         catch (Exception e)
         {

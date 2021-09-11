@@ -8,7 +8,7 @@ namespace Mastery_Helper.Data
 {
     public class RegionModel : ComponentBase
     {
-        RiotSharp.Misc.Region _selectedRegion = RiotSharp.Misc.Region.Eune;
+        RiotSharp.Misc.Region _selectedRegion;
         public RiotSharp.Misc.Region SelectedRegion 
         {
             get { return _selectedRegion; }
@@ -20,7 +20,7 @@ namespace Mastery_Helper.Data
             }
         }
 
-        string _selectedRegionEndpoint = "Eune";
+        string _selectedRegionEndpoint;
 
         [Parameter]
         public string SelectedRegionEndpoint 
