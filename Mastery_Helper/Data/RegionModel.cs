@@ -14,7 +14,6 @@ namespace Mastery_Helper.Data
             get { return _selectedRegion; }
             set 
             {
-                Console.WriteLine($"region set to {value.ToString()}");
                 _selectedRegion = value;
                 if(SelectedRegionEndpoint != value.ToString()) SelectedRegionEndpoint = value.ToString();
             }
@@ -31,11 +30,28 @@ namespace Mastery_Helper.Data
             } 
             set 
             {
-                Console.WriteLine($"endpoint set to {value}");
                 _selectedRegionEndpoint = value;
                 if(value != null && SelectedRegion != (RiotSharp.Misc.Region)Enum.Parse(typeof(RiotSharp.Misc.Region), value, true)) SelectedRegion = (RiotSharp.Misc.Region)Enum.Parse(typeof(RiotSharp.Misc.Region), value, true);
             } 
         
+        }
+
+        string _summonerName = null;
+        public bool summonerChanged = false;
+
+        [Parameter]
+        public string SummonerName
+        {
+            get
+            {
+                return _summonerName;
+            }
+            set
+            {
+                _summonerName = value;
+                summonerChanged = true;
+            }
+
         }
 
         protected async override Task OnInitializedAsync()

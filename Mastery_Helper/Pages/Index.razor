@@ -16,10 +16,17 @@
         <option>@((RiotSharp.Misc.Region)0)</option>
     </select>
     <input autocomplete="on" type="text" placeholder="summoner name" name="summonerNameInput" class="e-control e-timepicker e-lib e-input myInput" @onchange="@summonerNameInputChanged" @onkeyup="@EnterKeyUp" />
-    <button class="btn myDark" @onclick="GetSummoner" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> submit </button>
+    <button class="btn myDark" @onclick="SetSummonerEndpoint" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> submit </button>
 </div>
 <div class="content px-4">
+    @if (isLoading)
+    {
+        <div class="loader">Loading...</div>
+    }
+    else
+    {
 
+    
     @if (!string.IsNullOrEmpty(currentSummonerId)) // Summoner info Header
     {
         <div style="text-align:center; margin:auto;">
@@ -122,22 +129,27 @@
 
 
             </div>
-        </div><br>
+        </div>
+        <br>
         <div style="max-width: 100%; overflow-x: auto;">
             <table class="table table-dark" style="--bs-table-bg: #1d2021; border-color: #454d55; border-style: solid; border-width: 1px; ">
                 <thead style="border-bottom-width:3px; border-style:solid; border-color:#454d55;">
                     <tr>
                         <th class="sort-th" @onclick="@(() => SortTable("ChampionId"))">
-                            Champion <span class="oi @(SetSortIcon("ChampionId"))"></span>
+                            Champion
+                            <span class="oi @(SetSortIcon("ChampionId"))"></span>
                         </th>
                         <th class="sort-th" @onclick="@(() => SortTable("ChampionLevel"))">
-                            Level  <span class="oi @(SetSortIcon("ChampionLevel"))"></span>
+                            Level
+                            <span class="oi @(SetSortIcon("ChampionLevel"))"></span>
                         </th>
                         <th class="sort-th" @onclick="@(() => SortTable("ChampionPoints"))">
-                            Points <span class="oi @(SetSortIcon("ChampionPoints"))"></span>
+                            Points
+                            <span class="oi @(SetSortIcon("ChampionPoints"))"></span>
                         </th>
                         <th class="sort-th" @onclick="@(() => SortTable("ChampionPointsUntilNextLevel"))">
-                            Points To Next Level <span class="oi @(SetSortIcon("ChampionPointsUntilNextLevel"))"></span>
+                            Points To Next Level
+                            <span class="oi @(SetSortIcon("ChampionPointsUntilNextLevel"))"></span>
                         </th>
                     </tr>
                 </thead>
@@ -165,6 +177,7 @@
             </table>
         </div>
     }
+    }
 </div>
 
 @code{
@@ -172,9 +185,7 @@
     public RiotApi api = RiotApi.GetInstance(apiKey, 20, 100);
 
     string currentSummonerId;
-    [Parameter]
-    public string SummonerName { get; set; } = null;
-    RiotSharp.Endpoints.SummonerEndpoint.Summoner summoner;
+    RiotSharp.Endpoints.SummonerEndpoint.Summoner summoner = new RiotSharp.Endpoints.SummonerEndpoint.Summoner();
     string summonerIconUrl = null;
 
     static List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery> championMasteries = new List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery>();
@@ -191,6 +202,9 @@
     private bool? isSortedAscending = null;
     private string activeSortColumn = null;
 
+    private bool isLoading = true;
+    private bool endpointChanged = false;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -198,12 +212,13 @@
             latestVersion = api.StaticData.Versions.GetAllAsync().Result[0];
             championList = await api.StaticData.Champions.GetAllAsync(latestVersion);
             SelectedRegion = RiotSharp.Misc.Region.Eune;
+            summonerChanged = false;
+            Console.WriteLine("init");
         }
         catch (Exception e)
         {
-            Console.WriteLine($"failed initialising index page {e}");
+            Console.WriteLine($"Failed initialising index page {e}");
         }
-        Console.WriteLine("init");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -212,25 +227,44 @@
         {
             try
             {
-                Console.WriteLine("first render");
+                Console.WriteLine("First render");
                 if (!string.IsNullOrEmpty(SummonerName))
                 {
                     await GetSummoner();
                 }
+                isLoading = false;
             }
             catch (Exception e)
             {
-                Console.WriteLine($"failed first render of index page {e}");
+                Console.WriteLine($"Failed first render of index page {e}");
             }
         }
         else
         {
-            //if (NavigationManager.Uri != $"{NavigationManager.BaseUri}{SummonerName}")
-            //{
-            //    await GetSummoner();
-            //}
+            Console.WriteLine("Render");
+            try
+            {
+
+                if(!string.IsNullOrEmpty(summoner.Name)) endpointChanged = await CheckIfEndpointHasChanged();
+
+                if (endpointChanged)
+                {
+                    endpointChanged = false;
+                    summonerChanged = false;
+                    await GetSummoner();
+                }
+                else if (summonerChanged)
+                {
+                    //await SetSummonerEndpoint();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed render of index page {e}");
+            }
+
         }
-        Console.WriteLine($"render {SummonerName}");
+
     }
 
     async Task GetMasteryScores()
@@ -245,22 +279,22 @@
         {
             Console.WriteLine($"Failed fetching mastery {e}");
         }
-        StateHasChanged();
     }
 
     async Task GetSummoner()
     {
         try
         {
-            Console.WriteLine("Submit pressed");
-            NavigationManager.NavigateTo($"{NavigationManager.BaseUri}player/{SelectedRegionEndpoint}/{SummonerName}");
+            Console.WriteLine("Getting summoner");
+
             summoner = await api.Summoner.GetSummonerByNameAsync(SelectedRegion, SummonerName);
             currentSummonerId = summoner.Id;
-            summonerIconUrl = "http://ddragon.leagueoflegends.com/cdn/" + $"{latestVersion}/img/profileicon/{summoner.ProfileIconId}.png";
-            Console.WriteLine($"{summoner.ProfileIconId}");
+            summonerIconUrl = "https://ddragon.leagueoflegends.com/cdn/" + $"{latestVersion}/img/profileicon/{summoner.ProfileIconId}.png";
             Console.WriteLine($"Summoner {summoner.Name} with id: {currentSummonerId} received");
             await GetMasteryScores();
             await CountAmountOfChampionsOnEachLevel();
+            summonerChanged = false;
+            isLoading = false;
             StateHasChanged();
         }
         catch (Exception e)
@@ -269,17 +303,45 @@
         }
     }
 
+    Task<bool> SetSummonerEndpoint()
+    {
+        endpointChanged = true;
+        NavigationManager.NavigateTo($"{NavigationManager.BaseUri}player/{SelectedRegionEndpoint}/{SummonerName}");
+
+        Console.WriteLine("endpoint changed");
+        return Task.FromResult(true);
+
+    }
+
+    Task<bool> CheckIfEndpointHasChanged()
+    {
+        bool result = (summoner.Name != SummonerName || summoner.Region != SelectedRegion);
+
+        return Task.FromResult(result);
+    }
+
     public async Task EnterKeyUp(KeyboardEventArgs e)
     {
         if (e.Code == "Enter" || e.Code == "NumpadEnter")
         {
-            await GetSummoner();
+
+            await SetSummonerEndpoint();
         }
     }
+
+    //public async Task SelectedRegionHandler(ChangeEventArgs args)
+    //{
+
+    //    if (args.Value != null && SelectedRegion != (RiotSharp.Misc.Region)Enum.Parse(typeof(RiotSharp.Misc.Region), args.Value.ToString())) SelectedRegion = (RiotSharp.Misc.Region)Enum.Parse(typeof(RiotSharp.Misc.Region), args.Value.ToString(), true);
+    //    await SetSummonerEndpoint();
+
+    //}
+
     public void summonerNameInputChanged(ChangeEventArgs args)
     {
         Console.WriteLine($"Called summonerNameInputChanged");
         SummonerName = args.Value.ToString();
+        summonerChanged = false;
     }
 
 
