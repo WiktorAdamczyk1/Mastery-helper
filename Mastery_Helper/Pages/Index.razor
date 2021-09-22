@@ -4,11 +4,12 @@
 @using System
 @using RiotSharp
 @using System.Linq
+@using System.Globalization
 @inject NavigationManager NavigationManager
 <!-- CSS only -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
 <div class="top-row px-4" style="border-width:2px; border-color: #373b3e; z-index:5;">
-    <select class="btn selectpicker myDark" data-live-search="true" @bind="SelectedRegion" title="region" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left; text-transform:uppercase">
+    <select class="btn selectpicker myDark" data-live-search="true" @bind="_selectedRegion" title="region" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left; text-transform:uppercase">
         @for (int i = 1; i < 10; i++)
         {
             <option>@((RiotSharp.Misc.Region)i)</option>
@@ -203,7 +204,8 @@
     private string activeSortColumn = null;
 
     private bool isLoading = true;
-    private bool endpointChanged = false;
+    private bool isEndpointChanging = false;
+    public RiotSharp.Misc.Region _selectedRegion = RiotSharp.Misc.Region.Eune;
 
     protected override async Task OnInitializedAsync()
     {
@@ -214,6 +216,7 @@
             SelectedRegion = RiotSharp.Misc.Region.Eune;
             summonerChanged = false;
             Console.WriteLine("init");
+
         }
         catch (Exception e)
         {
@@ -245,18 +248,13 @@
             try
             {
 
-                if(!string.IsNullOrEmpty(summoner.Name)) endpointChanged = await CheckIfEndpointHasChanged();
+                if (!string.IsNullOrEmpty(summoner.Name) && !isEndpointChanging)
+                {
+                    isEndpointChanging = true;
+                    await CheckIfEndpointHasChanged();
+                    isEndpointChanging = false;
+                }
 
-                if (endpointChanged)
-                {
-                    endpointChanged = false;
-                    summonerChanged = false;
-                    await GetSummoner();
-                }
-                else if (summonerChanged)
-                {
-                    //await SetSummonerEndpoint();
-                }
             }
             catch (Exception e)
             {
@@ -293,7 +291,6 @@
             Console.WriteLine($"Summoner {summoner.Name} with id: {currentSummonerId} received");
             await GetMasteryScores();
             await CountAmountOfChampionsOnEachLevel();
-            summonerChanged = false;
             isLoading = false;
             StateHasChanged();
         }
@@ -303,28 +300,34 @@
         }
     }
 
-    Task<bool> SetSummonerEndpoint()
+    async Task<bool> SetSummonerEndpoint()
     {
-        endpointChanged = true;
+        SelectedRegion = _selectedRegion;
+        if (NavigationManager.Uri == $"{NavigationManager.BaseUri}player/{SelectedRegionEndpoint}/{SummonerName}")
+            return false;
+
         NavigationManager.NavigateTo($"{NavigationManager.BaseUri}player/{SelectedRegionEndpoint}/{SummonerName}");
-
         Console.WriteLine("endpoint changed");
-        return Task.FromResult(true);
-
+        if (string.IsNullOrEmpty(summoner.Name)) await GetSummoner();
+        return true;
     }
 
-    Task<bool> CheckIfEndpointHasChanged()
+    async Task<bool> CheckIfEndpointHasChanged()
     {
-        bool result = (summoner.Name != SummonerName || summoner.Region != SelectedRegion);
-
-        return Task.FromResult(result);
+        bool result = (String.Compare(summoner.Name, SummonerName, CultureInfo.CurrentCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreSymbols) != 0
+            || summoner.Region != SelectedRegion);
+        if (result)
+        {
+            await GetSummoner();
+        }
+        return result;
     }
 
     public async Task EnterKeyUp(KeyboardEventArgs e)
     {
         if (e.Code == "Enter" || e.Code == "NumpadEnter")
         {
-
+            SelectedRegion = _selectedRegion;
             await SetSummonerEndpoint();
         }
     }
@@ -342,6 +345,7 @@
         Console.WriteLine($"Called summonerNameInputChanged");
         SummonerName = args.Value.ToString();
         summonerChanged = false;
+        SelectedRegion = _selectedRegion;
     }
 
 
