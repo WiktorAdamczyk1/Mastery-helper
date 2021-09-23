@@ -261,6 +261,30 @@ app {
         left: 3.5em;
     }
 
+a {
+    color: #9d9488;
+}
+
+    a:link {
+        text-decoration: none;
+        color: #9d9488;
+    }
+
+    a:visited {
+        text-decoration: none;
+        color: #9d9488;
+    }
+
+    a:hover {
+        text-decoration: none;
+        color: #9d9488;
+    }
+
+    a:active {
+        text-decoration: none;
+        color: #9d9488;
+    }
+
 @-webkit-keyframes load7 {
     0%, 80%, 100% {
         box-shadow: 0 2.5em 0 -1.3em;

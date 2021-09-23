@@ -4,7 +4,9 @@
 <div class="main" style="padding:0px">
     @if (!NavigationManager.Uri.Contains($"{NavigationManager.BaseUri}player"))
     {
-        <div class="top-row px-4" style="border-width:2px; border-color: #373b3e; z-index:5;">
+        <div class="top-row px-4" style="border-width:2px; border-color: #373b3e; z-index:5; justify-content:flex-start">
+            <a href="/leaderboard">Leaderboard</a>
+            <div style="justify-content: flex-start; margin-left: auto;">
             <select class="btn selectpicker myDark" data-live-search="true" @bind="_selectedRegion" title="region" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left; text-transform:uppercase">
                 @for (int i = 1; i < 10; i++)
                 {
@@ -14,6 +16,7 @@
             </select>
             <input autocomplete="on" type="text" placeholder="summoner name" name="summonerNameInput" class="e-control e-timepicker e-lib e-input myInput" @onchange="@summonerNameInputChanged" @onkeyup="@EnterKeyUp" />
             <button class="btn myDark" @onclick="SetSummonerEndpoint" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> submit </button>
+            </div>
         </div>
     }
     @Body

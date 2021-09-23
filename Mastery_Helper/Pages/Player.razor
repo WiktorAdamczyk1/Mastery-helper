@@ -156,23 +156,27 @@
                     <tbody>
                         @for (int i = 0; i < @championMasteries.Count(); i++)
                         {
-                            var rowNumber = i;
+                            var championName = GetChampionName(championMasteries[i].ChampionId);
+                            var murderbridgeLink = $"{murderBridgeUrl}{championName}";
                             <tr>
-                                <td>@GetChampionName(championMasteries[i].ChampionId)</td>
-                                <td>@championMasteries[i].ChampionLevel</td>
-                                <td>@championMasteries[i].ChampionPoints</td>
                                 <td>
-                                    @if (@championMasteries[i].ChampionPointsUntilNextLevel == 0)
-                                    {
-                                        <text> N/A </text>
-                                    }
-                                    else
-                                    {
-                                        @championMasteries[i].ChampionPointsUntilNextLevel
-                                    }
-                                </td>
-                            </tr>
-                        }
+                                    @championName
+                                <a href="@murderbridgeLink"> <img src="https://i.imgur.com/wRz7OlT.png" style="width:20px; height:20px;"></a>
+                            </td>
+                            <td>@championMasteries[i].ChampionLevel</td>
+                            <td>@championMasteries[i].ChampionPoints</td>
+                            <td>
+                                @if (@championMasteries[i].ChampionPointsUntilNextLevel == 0)
+                                {
+                                    <text> N/A </text>
+                                }
+                                else
+                                {
+                                    @championMasteries[i].ChampionPointsUntilNextLevel
+                                }
+                            </td>
+                        </tr>
+                    }
                     </tbody>
                 </table>
             </div>
@@ -182,7 +186,7 @@
 
 @code{
     const string apiKey = "RGAPI-1636d837-2d72-455b-9c14-414f5de35d1e";
-    public RiotApi api = RiotApi.GetInstance(apiKey, 20, 100);
+    private RiotApi api = RiotApi.GetInstance(apiKey, 20, 100);
 
     string currentSummonerId;
     RiotSharp.Endpoints.SummonerEndpoint.Summoner summoner = new RiotSharp.Endpoints.SummonerEndpoint.Summoner();
@@ -205,7 +209,7 @@
     private bool isLoading = true;
     private bool isEndpointChanging = false;
     public RiotSharp.Misc.Region _selectedRegion = RiotSharp.Misc.Region.Eune;
-
+    const string murderBridgeUrl = "https://www.murderbridge.com/champion/";
     protected override async Task OnInitializedAsync()
     {
         try
