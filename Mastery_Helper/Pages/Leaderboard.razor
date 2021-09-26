@@ -1,8 +1,6 @@
 ﻿@page "/leaderboard"
 @using System
 @using RiotSharp
-@using System.Linq
-@using System.Globalization
 @inject NavigationManager NavigationManager
 <!-- CSS only -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
@@ -52,7 +50,7 @@
                                     <img width="35" height="35" src="@GetSummonerIconUrl(leaderboardEntries[i].ProfileIconId)" />
                                 </td>
                                 <td style="text-align:left;">
-                                    @leaderboardEntries[i].SummonerName
+                                    <a style="color:whitesmoke" href="/player/eune/@leaderboardEntries[i].SummonerName">@leaderboardEntries[i].SummonerName</a>
                                 </td>
                                 <td>
                                     @leaderboardEntries[i].SummonerLevel
