@@ -12,11 +12,11 @@
     <a href="/leaderboard">Leaderboard</a>
     
     <div style="justify-content: flex-start; margin-left: auto;">
-        @if (ShowUnplayedChampions)
+        @if (!IsAramHelperOn && ShowUnplayedChampions)
         {
             <button class="btn myDark" @onclick="ShowUnplayedChampionsValueChanged" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> Hide Unplayed Champs </button>
         }
-        else
+        else if(!IsAramHelperOn)
         {
             <button class="btn myDark" @onclick="ShowUnplayedChampionsValueChanged" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> Show Unplayed Champs </button>
         }
@@ -159,7 +159,7 @@
             else
             {
                 // Selectpicker to add champions to the pool for Aram helper
-                <select @onchange="@AddChampionToList" class="btn selectpicker myDark" data-live-search="true" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left;">
+                <select autofocus @onchange="@AddChampionToList" class="btn selectpicker myDark" data-live-search="true" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left;">
                     <option value="" selected disabled>Add Champion</option>
                     @foreach (var champion in championList.Keys)
                     {
@@ -173,6 +173,7 @@
                         }
                     }
                 </select>
+                <button class="btn myDark" @onclick="ClearChampionList" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; margin-left:7px;"> Reset </button>
             }
             <br>
             <div style="max-width: 100%; overflow-x: auto;">
@@ -202,8 +203,8 @@
                         {
                             @if (!IsAramHelperOn || IsAramHelperOn && selectedChampionsIdList.Contains(championMasteries[i].ChampionId))
                             {
-                                if(championMasteries[i].ChampionLevel != 0 || (championMasteries[i].ChampionLevel == 0 && ShowUnplayedChampions))
-                                { 
+                                if (championMasteries[i].ChampionLevel != 0 || IsAramHelperOn || (championMasteries[i].ChampionLevel == 0 && ShowUnplayedChampions))
+                                {
                                     var championName = GetChampionName(championMasteries[i].ChampionId);
                                     var murderbridgeLink = $"{murderBridgeUrl}{championName}";
                                     <tr>
@@ -227,7 +228,7 @@
                                 }
                             }
                         }
-                        
+
                     </tbody>
                 </table>
             </div>
@@ -433,6 +434,11 @@
     private void AddChampionToList(ChangeEventArgs e)
     {
         selectedChampionsIdList.Add(Convert.ToInt64(e.Value));
+    }
+
+    private void ClearChampionList()
+    {
+        selectedChampionsIdList.Clear();
     }
 
     private Task AddUnplayedChampions()
