@@ -1,0 +1,50 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@using RiotSharp
+<div class="main" style="padding:0px">
+    @if (!NavigationManager.Uri.Contains($"{NavigationManager.BaseUri}player"))
+    {
+    <div class="top-row px-4" style="border-width:2px; border-color: #373b3e; z-index:5; justify-content:flex-start">
+        <a href="/"><span class="oi oi-home"></span></a>
+        <a href="/leaderboard">Leaderboard</a>
+        <div style="justify-content: flex-start; margin-left: auto;">
+            <select class="btn selectpicker myDark" data-live-search="true" @bind="_selectedRegion" title="region" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left; text-transform:uppercase">
+                @for (int i = 1; i < 10; i++)
+                {
+                    <option>@((RiotSharp.Misc.Region)i)</option>
+                }
+                <option>@((RiotSharp.Misc.Region)0)</option>
+            </select>
+            <input autocomplete="on" type="text" placeholder="summoner name" name="summonerNameInput" class="e-control e-timepicker e-lib e-input myInput" @onchange="@summonerNameInputChanged" @onkeyup="@EnterKeyUp" />
+            <button class="btn myDark" @onclick="SetSummonerEndpoint" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> submit </button>
+        </div>
+    </div>
+    }
+    @Body
+</div>
+
+@code   {
+    private RiotSharp.Misc.Region _selectedRegion = RiotSharp.Misc.Region.Eune;
+    private string _summonerName = null;
+
+    Task<bool> SetSummonerEndpoint()
+    {
+        NavigationManager.NavigateTo($"{NavigationManager.BaseUri}player/{_selectedRegion.ToString()}/{_summonerName}");
+        Console.WriteLine("endpoint changed");
+        return Task.FromResult(true);
+    }
+
+    public void summonerNameInputChanged(ChangeEventArgs args)
+    {
+        Console.WriteLine($"Called summonerNameInputChanged");
+        _summonerName = args.Value.ToString();
+    }
+
+    public async Task EnterKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            await SetSummonerEndpoint();
+        }
+    }
+}

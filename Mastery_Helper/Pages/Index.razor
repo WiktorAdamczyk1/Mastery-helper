@@ -1,0 +1,61 @@
+﻿@page "/"
+@inherits Data.RegionModel
+@using System
+@using RiotSharp
+@inject NavigationManager NavigationManager
+<!-- CSS only -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+<div class="content px-4">
+    @if (IsLoading)
+    {
+        <div class="loader">Loading...</div>
+    }
+    else
+    {
+        <h1 style="text-align:center">Choose a summoner</h1>
+    }
+</div>
+
+@code{
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Console.WriteLine("Index init");
+
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed initialising index page {e}");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                Console.WriteLine("Index first render");
+                IsLoading = false;
+                StateHasChanged();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed first render of index page {e}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Render");
+
+        }
+    }
+
+
+    //page where I input current champions available and it sorts tham based on points
+    //Leaderboard page with me and my friends ->  tracking page using localbrowserstorage that will compare ppl you entered there
+    //region endpoint using models
+}

@@ -1,0 +1,280 @@
+﻿@page "/leaderboard"
+@using System
+@using RiotSharp
+@inject NavigationManager NavigationManager
+<!-- CSS only -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+<div class="content px-4">
+    @if (IsLoading)
+    {
+        <div class="loader">Loading...</div>
+    }
+    else
+    {
+        <h1 style="text-align:center">Leaderboard</h1>
+            <div class="text-center">
+                <div style="max-width: 100%; overflow-x: auto;">
+                    <table class="table table-dark" style="--bs-table-bg: #1d2021; border-color: #454d55; border-style: solid; border-width: 1px; ">
+                        <thead style="border-bottom-width:3px; border-style:solid; border-color:#454d55;">
+                            <tr>
+                                <th style="width:20px;">
+                                    No.
+                                </th>
+                                <th style="width:30px;">
+
+                                </th>
+                                <th class="sort-th" @onclick="@(() => SortTable("SummonerName"))" style="text-align:left">
+                                    Summoner
+                                    <span class="oi @(SetSortIcon("SummonerName"))"></span>
+                                </th>
+                                <th class="sort-th" @onclick="@(() => SortTable("SummonerLevel"))" style="width:60px;">
+                                    Level
+                                    <span class="oi @(SetSortIcon("SummonerLevel"))"></span>
+                                </th>
+                                <th class="sort-th" @onclick="@(() => SortTable("ChampionsMastered"))">
+                                    Champions Mastered
+                                    <span class="oi @(SetSortIcon("ChampionsMastered"))"></span>
+                                </th>
+                                <th class="sort-th" @onclick="@(() => SortTable("PointsRemaining"))">
+                                    Points Left
+                                    <span class="oi @(SetSortIcon("PointsRemaining"))"></span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < leaderboardEntries.Count(); i++)
+                            {
+                            <tr>
+                                <td>@(i+1)</td>
+                                <td>
+                                    <img width="35" height="35" src="@GetSummonerIconUrl(leaderboardEntries[i].ProfileIconId)" />
+                                </td>
+                                <td style="text-align:left;">
+                                    <a style="color:whitesmoke" href="/player/eune/@leaderboardEntries[i].SummonerName">@leaderboardEntries[i].SummonerName</a>
+                                </td>
+                                <td>
+                                    @leaderboardEntries[i].SummonerLevel
+                                </td>
+                                <td>@leaderboardEntries[i].ChampionsMastered</td>
+                                <td>@leaderboardEntries[i].PointsRemaining (@leaderboardEntries[i].PointsRemainingPercentage.ToString("F")%)</td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+    }
+</div>
+
+
+@code {
+
+    struct LeaderboardEntry
+    {
+        public int ProfileIconId { get; set; }
+        public string SummonerName { get; set; }
+        public long SummonerLevel { get; set; }
+        public int PointsRemaining { get; set; }
+        public int ChampionsMastered { get; set; }
+        public double PointsRemainingPercentage { get; set; }
+    }
+    const string apiKey = "my_api_key";
+    private RiotApi api = RiotApi.GetInstance(apiKey, 30, 120);
+    RiotSharp.Endpoints.StaticDataEndpoint.Champion.ChampionListStatic championList;
+
+    string[] summonerNamesList = { "vitrex1", "maxer babyrage", "Jadelit", "Unlucky maxer", "WonsEU", "RapoXer", "Egzotyczny Kamil", "suhmyπiΔΔa", "Lireq", "Hoszyk", "Margo00", "Saďge" };
+    List<LeaderboardEntry> leaderboardEntries = new List<LeaderboardEntry>();
+    private bool IsLoading { get; set; } = true;
+
+    private bool? isSortedAscending = null;
+    private string activeSortColumn = null;
+    string latestVersion = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            latestVersion = api.StaticData.Versions.GetAllAsync().Result[0];
+            championList = await api.StaticData.Champions.GetAllAsync(latestVersion);
+            Console.WriteLine("Leaderboard init");
+
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed initialising Leaderboards page {e}");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                Console.WriteLine("Leaderboard first render");
+                championList = await api.StaticData.Champions.GetAllAsync(latestVersion);
+
+                for (int i = 0; i < summonerNamesList.Count(); i++)
+                {
+                    // Get summoner
+                    var summoner = await GetSummoner(summonerNamesList[i]);
+                    // Get mastery
+                    List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery> championMasteries = await GetMasteryScores(summoner.Id);
+                    LeaderboardEntry entry = new LeaderboardEntry();
+                    entry.ProfileIconId = summoner.ProfileIconId;
+                    entry.SummonerName = summoner.Name;
+                    entry.SummonerLevel = summoner.Level;
+                    entry.PointsRemaining = CalculateRemainingPoints(championMasteries);
+                    int[] championsOnLevel = await CountAmountOfChampionsOnEachLevel(championMasteries);
+                    entry.ChampionsMastered = championsOnLevel[5]+championsOnLevel[6]+championsOnLevel[7];
+                    entry.PointsRemainingPercentage = await CalculateRemainingPointsPercentage(entry.PointsRemaining);
+
+                    leaderboardEntries.Add(entry);
+                }
+                SortTable("PointsRemaining");
+                //create table with data
+                //render
+                IsLoading = false;
+                StateHasChanged();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed first render of index page {e}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Render");
+
+        }
+    }
+
+    async Task<RiotSharp.Endpoints.SummonerEndpoint.Summoner> GetSummoner(string summonerName)
+    {
+        try
+        {
+            Console.WriteLine("Getting summoner");
+
+            var summoner = await api.Summoner.GetSummonerByNameAsync(RiotSharp.Misc.Region.Eune, summonerName);
+            return summoner;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Getting summoner ID failed {e}");
+            return null;
+        }
+    }
+
+    async Task<List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery>> GetMasteryScores(string summonerId)
+    {
+        try
+        {
+            Console.WriteLine("Mastery scores received");
+            return await api.ChampionMastery.GetChampionMasteriesAsync(RiotSharp.Misc.Region.Eune, summonerId);
+
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed fetching mastery {e}");
+            return null;
+        }
+    }
+
+    int CalculateRemainingPoints(List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery> championMasteries)
+    {
+        int remaining = (championList.Champions.Count() - championMasteries.Count()) * 21600;
+
+        for (int i = 0; i < championMasteries.Count(); i++)
+        {
+            if (championMasteries[i].ChampionPoints < 21600)
+            {
+                remaining += 21600 - championMasteries[i].ChampionPoints;
+            }
+        }
+        return remaining;
+    }
+
+    private string GetSummonerIconUrl(int summonerProfileIconId)
+    {
+        return "https://ddragon.leagueoflegends.com/cdn/" + $"{latestVersion}/img/profileicon/{summonerProfileIconId}.png";
+    }
+
+    private Task<int[]> CountAmountOfChampionsOnEachLevel(List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery> championMasteries)
+    {
+        int[] championsOnLevel = new int[8];
+        for (int i = 0; i < championsOnLevel.Count(); i++)
+        {
+            championsOnLevel[i] = 0;
+        }
+
+        for (int i = 0; i < championMasteries.Count(); i++)
+        {
+            championsOnLevel[championMasteries[i].ChampionLevel]++;
+        }
+
+        int amountOfChampionsPlayed = 0;
+        for (int i = 1; i < championsOnLevel.Count(); i++)
+        {
+            amountOfChampionsPlayed += championsOnLevel[i];
+        }
+        championsOnLevel[0] = championList.Champions.Count() - amountOfChampionsPlayed;
+        return Task.FromResult(championsOnLevel);
+    }
+
+    private Task<double> CalculateRemainingPointsPercentage(double remainingPoints)
+    {
+        int totalPointsRequired = championList.Champions.Count() * 21600;
+        double fractionOfTotalRequiredPoints = remainingPoints / totalPointsRequired;
+        double result = fractionOfTotalRequiredPoints * 100;
+        return Task.FromResult(result);
+    }
+
+    private void SortTable(string columnName, bool changingSort = true)
+    {
+        if (columnName != activeSortColumn)
+        {
+            leaderboardEntries = leaderboardEntries.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            isSortedAscending = true;
+            activeSortColumn = columnName;
+        }
+        else if (changingSort)
+        {
+            if (isSortedAscending == true)
+            {
+                leaderboardEntries = leaderboardEntries.OrderByDescending(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+            else
+            {
+                leaderboardEntries = leaderboardEntries.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+            isSortedAscending = !isSortedAscending;
+        }
+        else
+        {
+            if (isSortedAscending == false)
+            {
+                leaderboardEntries = leaderboardEntries.OrderByDescending(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+            else
+            {
+                leaderboardEntries = leaderboardEntries.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+        }
+    }
+
+    private string SetSortIcon(string columnName)
+    {
+        if (activeSortColumn != columnName)
+        {
+            return string.Empty;
+        }
+        if (isSortedAscending == true)
+        {
+            return "oi-sort-ascending";
+        }
+        else
+        {
+            return "oi-sort-descending";
+        }
+    }
+}

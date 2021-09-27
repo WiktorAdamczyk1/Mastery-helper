@@ -1,0 +1,526 @@
+﻿@page "/player/{SelectedRegionEndpoint}/{SummonerName}"
+@inherits Data.RegionModel
+@using System
+@using RiotSharp
+@using System.Linq
+@using System.Globalization
+@inject NavigationManager NavigationManager
+<!-- CSS onlyt -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+<div class="top-row px-4" style="border-width: 2px; border-color: #373b3e; z-index: 5; justify-content: flex-start;">
+    <a href="/"><span class="oi oi-home"></span></a>
+    <a href="/leaderboard">Leaderboard</a>
+    
+    <div style="justify-content: flex-start; margin-left: auto;">
+        @if (ShowUnplayedChampions)
+        {
+            <button class="btn myDark" @onclick="ShowUnplayedChampionsValueChanged" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> Hide Unplayed Champs </button>
+        }
+        else
+        {
+            <button class="btn myDark" @onclick="ShowUnplayedChampionsValueChanged" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> Show Unplayed Champs </button>
+        }
+
+        @if (IsAramHelperOn)
+        {
+            <button class="btn myDark" @onclick="AramHelperValueChanged" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> Normal mode  </button>
+        }
+        else
+        {
+            <button class="btn myDark" @onclick="AramHelperValueChanged" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> Aram Helper </button>
+        }
+        <select class="btn selectpicker myDark" data-live-search="true" @bind="_selectedRegion" title="region" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left; text-transform:uppercase">
+            @for (int i = 1; i < 10; i++)
+            {
+                <option>@((RiotSharp.Misc.Region)i)</option>
+            }
+            <option>@((RiotSharp.Misc.Region)0)</option>
+        </select>
+        <input autocomplete="on" type="text" placeholder="summoner name" name="summonerNameInput" class="e-control e-timepicker e-lib e-input myInput" @onchange="@summonerNameInputChanged" @onkeyup="@EnterKeyUp" />
+        <button class="btn myDark" @onclick="SetSummonerEndpoint" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> submit </button>
+    </div>
+</div>
+<div class="content px-4">
+    @if (isLoading)
+    {
+        <div class="loader">Loading...</div>
+    }
+    else
+    {
+
+
+        @if (!string.IsNullOrEmpty(currentSummonerId)) // Summoner info Header
+        {
+            <div style="text-align:center; margin:auto;">
+                <div style="width:80px; display:inline-block;">
+                    <figure>
+                        <img width="75" height="75" src="@summonerIconUrl" />
+                        <figcaption style="font-size:10pt">@summoner.Level</figcaption>
+                    </figure>
+                </div>
+                <div style="display: inline-block; position: relative; top: -40px;">
+                    <h2>@summoner.Name (@Convert.ToString(summoner.Region).ToUpper())</h2>
+                </div>
+            </div>
+        }
+        else
+        {
+            <h1 style="text-align:center">Choose a summoner</h1>
+        }
+        <br>
+        @if (string.IsNullOrEmpty(currentSummonerId))
+        {
+
+        }
+        else
+        {
+            if (!IsAramHelperOn)
+            {
+
+
+                <div class="text-center">
+                    <h4> Least amount of points required to achieve level 5 on every champion: @CalculateRemainingPoints() (@(championsOnLevel[5] + championsOnLevel[6] + championsOnLevel[7])/@championList.Champions.Count())</h4>
+                    <div style="text-align: center; margin: auto; max-width: 100%; background-color: #1d2021; border-color: #454d55; border-width: 1px; border-style: solid; width: 65%;">
+                        <div style="width: auto; display: inline-block; margin-right: 0px; max-width: 100%; overflow-x: auto;">
+                            <table class="table" style="color: whitesmoke; width: auto; border-color: #454d55;">
+                                <tbody style="border-style:hidden">
+                                    <tr style="overflow-x:auto">
+                                        <td>
+                                            Points per aram
+                                        </td>
+                                        <td>
+                                            <input type="number" min="50" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="pointsPerAram" style="max-width: 100px;" />
+                                        </td>
+                                        <td>
+                                            It would take: @(pointsRemaining / pointsPerAram) aram games
+                                        </td>
+                                    </tr>
+                                    <tr style="overflow-x:auto">
+                                        <td>
+                                            Points per normal
+                                        </td>
+                                        <td>
+                                            <input type="number" min="200" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="pointsPerNormal" style="max-width: 100px;" />
+                                        </td>
+                                        <td>
+                                            It would take: @(pointsRemaining / pointsPerNormal) normal games
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="display: inline-block; max-width: 100%; overflow-x: auto;">
+                            <table class="table" style="width: auto; color: whitesmoke; margin-left: 0px; overflow-x: auto; border-color: #454d55;">
+                                <tbody style="border-style:hidden">
+                                    <tr style="overflow-x:auto">
+                                        <td>
+                                            Arams played daily
+                                        </td>
+                                        <td>
+                                            <input type="number" min="" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="aramsPlayedDaily" style="max-width: 100px;" />
+                                        </td>
+                                        <td>
+                                            Days left: @if (aramsPlayedDaily > 0)
+                                            {
+                                                <text>@((pointsRemaining / pointsPerAram) / aramsPlayedDaily)</text>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr style="overflow-x:auto">
+                                        <td>
+                                            Normals played daily
+                                        </td>
+                                        <td>
+                                            <input type="number" min="" oninput="validity.valid||(value='');" class="e-control e-timepicker e-lib e-input myInput" @bind="normalsPlayedDaily" style="max-width:100px;" />
+                                        </td>
+                                        <td>
+                                            Days left: @if (normalsPlayedDaily > 0)
+                                            {
+                                                <text>@((pointsRemaining / pointsPerNormal) / normalsPlayedDaily)</text>
+                                            }
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="text-center m-2" style="background-color: #1d2021; border-color: #454d55; border-width: 1px; border-style: solid; padding: 5px; margin: 15px; width: 65%; display: inline-block; ">
+
+                        @for (int i = 0; i < championsOnLevel.Count(); i++)
+                        {
+                            <div style="margin-left: 3%; margin-right: 3%; display: inline-block;">lvl @i: @championsOnLevel[i]</div>
+                        }
+
+                    </div>
+                </div>
+            }
+            else
+            {
+                // Selectpicker to add champions to the pool for Aram helper
+                <select @onchange="@AddChampionToList" class="btn selectpicker myDark" data-live-search="true" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e; text-align: left;">
+                    <option value="" selected disabled>Add Champion</option>
+                    @foreach (var champion in championList.Keys)
+                    {
+                        if (!selectedChampionsIdList.Contains(champion.Key))
+                        {
+                            <option value="@champion.Key">@champion.Value</option>
+                        }
+                        else
+                        {
+
+                        }
+                    }
+                </select>
+            }
+            <br>
+            <div style="max-width: 100%; overflow-x: auto;">
+                <table class="table table-dark" style="--bs-table-bg: #1d2021; border-color: #454d55; border-style: solid; border-width: 1px; ">
+                    <thead style="border-bottom-width:3px; border-style:solid; border-color:#454d55;">
+                        <tr>
+                            <th class="sort-th" @onclick="@(() => SortTable("ChampionId"))">
+                                Champion
+                                <span class="oi @(SetSortIcon("ChampionId"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("ChampionLevel"))">
+                                Level
+                                <span class="oi @(SetSortIcon("ChampionLevel"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("ChampionPoints"))">
+                                Points
+                                <span class="oi @(SetSortIcon("ChampionPoints"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("ChampionPointsUntilNextLevel"))">
+                                Points To Next Level
+                                <span class="oi @(SetSortIcon("ChampionPointsUntilNextLevel"))"></span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < championMasteries.Count(); i++)
+                        {
+                            @if (!IsAramHelperOn || IsAramHelperOn && selectedChampionsIdList.Contains(championMasteries[i].ChampionId))
+                            {
+                                if(championMasteries[i].ChampionLevel != 0 || (championMasteries[i].ChampionLevel == 0 && ShowUnplayedChampions))
+                                { 
+                                    var championName = GetChampionName(championMasteries[i].ChampionId);
+                                    var murderbridgeLink = $"{murderBridgeUrl}{championName}";
+                                    <tr>
+                                        <td>
+                                            @championName
+                                            <a href="@murderbridgeLink"> <img src="https://i.imgur.com/wRz7OlT.png" style="width:20px; height:20px;"></a>
+                                        </td>
+                                        <td>@championMasteries[i].ChampionLevel</td>
+                                        <td>@championMasteries[i].ChampionPoints</td>
+                                        <td>
+                                            @if (@championMasteries[i].ChampionPointsUntilNextLevel == 0)
+                                            {
+                                                <text> N/A </text>
+                                            }
+                                            else
+                                            {
+                                                @championMasteries[i].ChampionPointsUntilNextLevel
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        }
+                        
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>
+
+@code{
+    const string apiKey = "my_api_key";
+    private RiotApi api = RiotApi.GetInstance(apiKey, 20, 100);
+
+    string currentSummonerId;
+    RiotSharp.Endpoints.SummonerEndpoint.Summoner summoner = new RiotSharp.Endpoints.SummonerEndpoint.Summoner();
+    string summonerIconUrl = null;
+
+    static List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery> championMasteries = new List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery>();
+    static RiotSharp.Endpoints.StaticDataEndpoint.Champion.ChampionListStatic championList;
+    static string latestVersion = null;
+
+    int pointsPerAram = 700;
+    int pointsPerNormal = 1000;
+    int aramsPlayedDaily = 1;
+    int normalsPlayedDaily = 1;
+    int pointsRemaining = 0;
+    int[] championsOnLevel = new int[8];
+
+    private bool? isSortedAscending = null;
+    private string activeSortColumn = null;
+
+    private bool isLoading = true;
+    private bool isEndpointChanging = false;
+    public RiotSharp.Misc.Region _selectedRegion = RiotSharp.Misc.Region.Eune;
+    const string murderBridgeUrl = "https://www.murderbridge.com/champion/";
+
+    private bool IsAramHelperOn { get; set; } = false;
+    private bool ShowUnplayedChampions { get; set; } = false;
+    private List<long> selectedChampionsIdList = new List<long>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            latestVersion = api.StaticData.Versions.GetAllAsync().Result[0];
+            championList = await api.StaticData.Champions.GetAllAsync(latestVersion);
+            summonerChanged = false;
+            Console.WriteLine("init");
+
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed initialising index page {e}");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                Console.WriteLine("First render");
+                if (!string.IsNullOrEmpty(SummonerName))
+                {
+                    await GetSummoner();
+                }
+                isLoading = false;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed first render of index page {e}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Render");
+            try
+            {
+
+                if (!string.IsNullOrEmpty(summoner.Name) && !isEndpointChanging)
+                {
+                    isEndpointChanging = true;
+                    await CheckIfEndpointHasChanged();
+                    isEndpointChanging = false;
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed render of index page {e}");
+            }
+
+        }
+    }
+
+    async Task GetMasteryScores()
+    {
+        try
+        {
+            championMasteries = await api.ChampionMastery.GetChampionMasteriesAsync(SelectedRegion, currentSummonerId);
+
+            Console.WriteLine("Mastery scores received");
+
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed fetching mastery {e}");
+        }
+    }
+
+    async Task GetSummoner()
+    {
+        try
+        {
+            Console.WriteLine("Getting summoner");
+
+            summoner = await api.Summoner.GetSummonerByNameAsync(SelectedRegion, SummonerName);
+            currentSummonerId = summoner.Id;
+            summonerIconUrl = "https://ddragon.leagueoflegends.com/cdn/" + $"{latestVersion}/img/profileicon/{summoner.ProfileIconId}.png";
+            Console.WriteLine($"Summoner {summoner.Name} with id: {currentSummonerId} received");
+            await GetMasteryScores();
+            await AddUnplayedChampions();
+            await CountAmountOfChampionsOnEachLevel();
+            isLoading = false;
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Getting summoner ID failed {e}");
+        }
+    }
+
+    async Task<bool> SetSummonerEndpoint()
+    {
+        SelectedRegion = _selectedRegion;
+        if (NavigationManager.Uri == $"{NavigationManager.BaseUri}player/{SelectedRegionEndpoint}/{SummonerName}")
+            return false;
+
+        NavigationManager.NavigateTo($"{NavigationManager.BaseUri}player/{SelectedRegionEndpoint}/{SummonerName}");
+        Console.WriteLine("endpoint changed");
+        if (string.IsNullOrEmpty(summoner.Name)) await GetSummoner();
+        return true;
+    }
+
+    async Task<bool> CheckIfEndpointHasChanged()
+    {
+        bool result = (String.Compare(summoner.Name, SummonerName, CultureInfo.CurrentCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreSymbols) != 0
+            || summoner.Region != SelectedRegion);
+        if (result)
+        {
+            await GetSummoner();
+        }
+        return result;
+    }
+
+    public async Task EnterKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            SelectedRegion = _selectedRegion;
+            await SetSummonerEndpoint();
+        }
+    }
+
+    public void summonerNameInputChanged(ChangeEventArgs args)
+    {
+        Console.WriteLine($"Called summonerNameInputChanged");
+        SummonerName = args.Value.ToString();
+        summonerChanged = false;
+        SelectedRegion = _selectedRegion;
+    }
+
+
+    string GetChampionName(long id)
+    {
+        return championList.Champions.Values.Single(x => x.Id == id).Name;
+    }
+
+    int CalculateRemainingPoints()
+    {
+        int remaining = (championList.Champions.Count() - championMasteries.Count()) * 21600;
+
+        for (int i = 0; i < championMasteries.Count(); i++)
+        {
+            if (championMasteries[i].ChampionPoints < 21600)
+            {
+                remaining += 21600 - championMasteries[i].ChampionPoints;
+            }
+        }
+        pointsRemaining = remaining;
+        return remaining;
+    }
+
+    private void AramHelperValueChanged()
+    {
+        IsAramHelperOn = !IsAramHelperOn;
+    }
+
+    private void ShowUnplayedChampionsValueChanged()
+    {
+        ShowUnplayedChampions = !ShowUnplayedChampions;
+    }
+
+    private void AddChampionToList(ChangeEventArgs e)
+    {
+        selectedChampionsIdList.Add(Convert.ToInt64(e.Value));
+    }
+
+    private Task AddUnplayedChampions()
+    {
+        foreach (var champion in championList.Champions)
+        {
+            bool championInList = false;
+            for(int i = 0; i < championMasteries.Count(); i++)
+            {
+                if (championMasteries[i].ChampionId == champion.Value.Id) championInList = true;
+            }
+
+            if (!championInList)
+            {
+                var newChampionMastery = new RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery();
+                newChampionMastery.ChampionId = champion.Value.Id;
+                newChampionMastery.ChampionLevel = 0;
+                newChampionMastery.ChampionPoints = 0;
+                newChampionMastery.ChampionPointsSinceLastLevel = 0;
+                newChampionMastery.ChampionPointsUntilNextLevel = 1;
+                championMasteries.Add(newChampionMastery);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void SortTable(string columnName, bool changingSort = true)
+    {
+        if (columnName != activeSortColumn)
+        {
+            championMasteries = championMasteries.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            isSortedAscending = true;
+            activeSortColumn = columnName;
+        }
+        else if (changingSort)
+        {
+            if (isSortedAscending == true)
+            {
+                championMasteries = championMasteries.OrderByDescending(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+            else
+            {
+                championMasteries = championMasteries.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+            isSortedAscending = !isSortedAscending;
+        }
+        else
+        {
+            if (isSortedAscending == false)
+            {
+                championMasteries = championMasteries.OrderByDescending(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+            else
+            {
+                championMasteries = championMasteries.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
+            }
+        }
+    }
+
+    private string SetSortIcon(string columnName)
+    {
+        if (activeSortColumn != columnName)
+        {
+            return string.Empty;
+        }
+        if (isSortedAscending == true)
+        {
+            return "oi-sort-ascending";
+        }
+        else
+        {
+            return "oi-sort-descending";
+        }
+    }
+
+    private Task CountAmountOfChampionsOnEachLevel()
+    {
+        for (int i = 0; i < championsOnLevel.Count(); i++)
+        {
+            championsOnLevel[i] = 0;
+        }
+
+        for (int i = 0; i < championMasteries.Count(); i++)
+        {
+            championsOnLevel[championMasteries[i].ChampionLevel]++;
+        }
+
+        return Task.CompletedTask;
+    }
+}
