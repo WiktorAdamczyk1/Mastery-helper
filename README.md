@@ -1,6 +1,6 @@
 # Mastery-helper
 
-Live version is available at https://mastery-helper.herokuapp.com/
+~~Live version is available at https://mastery-helper.herokuapp.com/~~
 
 Mastery-helper is a blazor server application that uses League of Legends API to help players track and compare their progress on achieving mastery with every League of Legends champion.
 
