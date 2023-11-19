@@ -19,4 +19,4 @@ Mastery-helper is a blazor server application that uses League of Legends API to
 ## Setup
 
 1. Clone the repository
-2. Change `my_api_key` in `Player.razor` and `Leaderboard.razor` to [Riot Games API](https://developer.riotgames.com/)
+2. Setup an environmental variable `apiKey` to [Riot Games API](https://developer.riotgames.com/)
