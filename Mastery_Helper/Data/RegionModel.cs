@@ -36,7 +36,29 @@ namespace Mastery_Helper.Data
         
         }
 
+        private readonly object _lockObject = new object();
         string _summonerName = null;
+        public bool summonerChanged = false;
+
+        [Parameter]
+        public string SummonerName
+        {
+            get
+            {
+                return _summonerName;
+            }
+            set
+            {
+                lock (_lockObject)
+                {
+                    _summonerName = value;
+                    summonerChanged = true;
+                }
+            }
+        }
+
+        /*
+        zstring _summonerName = null;
         public bool summonerChanged = false;
 
         [Parameter]
@@ -53,6 +75,7 @@ namespace Mastery_Helper.Data
             }
 
         }
+         */
 
         protected async override Task OnInitializedAsync()
         {
