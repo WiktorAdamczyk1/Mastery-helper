@@ -10,13 +10,13 @@
 <div class="top-row px-4" style="border-width: 2px; border-color: #373b3e; z-index: 5; justify-content: flex-start;">
     <a href="/"><span class="oi oi-home"></span></a>
     <a href="/leaderboard">Leaderboard</a>
-    
+
     <div style="justify-content: flex-start; margin-left: auto;">
         @if (!IsAramHelperOn && ShowUnplayedChampions)
         {
             <button class="btn myDark" @onclick="ShowUnplayedChampionsValueChanged" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> Hide Unplayed Champs </button>
         }
-        else if(!IsAramHelperOn)
+        else if (!IsAramHelperOn)
         {
             <button class="btn myDark" @onclick="ShowUnplayedChampionsValueChanged" style="background-color: #181a1b; color: whitesmoke; border-width: 1px; border-color: #373b3e"> Show Unplayed Champs </button>
         }
@@ -237,15 +237,15 @@
 </div>
 
 @code{
-    const string apiKey = "RGAPI-1636d837-2d72-455b-9c14-414f5de35d1e";
+    private static string apiKey = System.Environment.GetEnvironmentVariable("apiKey");
     private RiotApi api = RiotApi.GetInstance(apiKey, 20, 100);
 
     string currentSummonerId;
     RiotSharp.Endpoints.SummonerEndpoint.Summoner summoner = new RiotSharp.Endpoints.SummonerEndpoint.Summoner();
     string summonerIconUrl = null;
 
-    static List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery> championMasteries = new List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery>();
-    static RiotSharp.Endpoints.StaticDataEndpoint.Champion.ChampionListStatic championList;
+    List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery> championMasteries = new List<RiotSharp.Endpoints.ChampionMasteryEndpoint.ChampionMastery>();
+    RiotSharp.Endpoints.StaticDataEndpoint.Champion.ChampionListStatic championList;
     static string latestVersion = null;
 
     int pointsPerAram = 700;
@@ -271,9 +271,10 @@
     {
         try
         {
-            latestVersion = api.StaticData.Versions.GetAllAsync().Result[0];
-            championList = await api.StaticData.Champions.GetAllAsync(latestVersion);
-            summonerChanged = false;
+            //moved to first render
+            //latestVersion = api.StaticData.Versions.GetAllAsync().Result[0];
+            //championList = await api.StaticData.Champions.GetAllAsync(latestVersion);
+            //summonerChanged = false;
             Console.WriteLine("init");
 
         }
@@ -292,6 +293,9 @@
                 Console.WriteLine("First render");
                 if (!string.IsNullOrEmpty(SummonerName))
                 {
+                    latestVersion = api.StaticData.Versions.GetAllAsync().Result[0];
+                    championList = await api.StaticData.Champions.GetAllAsync(latestVersion);
+                    summonerChanged = false;
                     await GetSummoner();
                 }
                 isLoading = false;
@@ -348,15 +352,22 @@
             currentSummonerId = summoner.Id;
             summonerIconUrl = "https://ddragon.leagueoflegends.com/cdn/" + $"{latestVersion}/img/profileicon/{summoner.ProfileIconId}.png";
             Console.WriteLine($"Summoner {summoner.Name} with id: {currentSummonerId} received");
+
+            Console.WriteLine("Getting mastery scores");
             await GetMasteryScores();
-            await AddUnplayedChampions();
+
+            Console.WriteLine("Counting champions on each level");
             await CountAmountOfChampionsOnEachLevel();
+
+            Console.WriteLine("Adding unplayed champions");
+            await AddUnplayedChampions();
+
             isLoading = false;
             StateHasChanged();
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Getting summoner ID failed {e}");
+            Console.WriteLine($"Error in GetSummoner: {e}");
         }
     }
 
@@ -446,9 +457,13 @@
         foreach (var champion in championList.Champions)
         {
             bool championInList = false;
-            for(int i = 0; i < championMasteries.Count(); i++)
+            for (int i = 0; i < championMasteries.Count(); i++)
             {
-                if (championMasteries[i].ChampionId == champion.Value.Id) championInList = true;
+                if (championMasteries[i].ChampionId == champion.Value.Id)
+                {
+                    championInList = true;
+                    //break; // No need to continue the loop once found
+                }
             }
 
             if (!championInList)

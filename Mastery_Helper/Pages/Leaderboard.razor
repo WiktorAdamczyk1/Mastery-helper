@@ -12,38 +12,38 @@
     else
     {
         <h1 style="text-align:center">Leaderboard</h1>
-            <div class="text-center">
-                <div style="max-width: 100%; overflow-x: auto;">
-                    <table class="table table-dark" style="--bs-table-bg: #1d2021; border-color: #454d55; border-style: solid; border-width: 1px; ">
-                        <thead style="border-bottom-width:3px; border-style:solid; border-color:#454d55;">
-                            <tr>
-                                <th style="width:20px;">
-                                    No.
-                                </th>
-                                <th style="width:30px;">
+        <div class="text-center">
+            <div style="max-width: 100%; overflow-x: auto;">
+                <table class="table table-dark" style="--bs-table-bg: #1d2021; border-color: #454d55; border-style: solid; border-width: 1px; ">
+                    <thead style="border-bottom-width:3px; border-style:solid; border-color:#454d55;">
+                        <tr>
+                            <th style="width:20px;">
+                                No.
+                            </th>
+                            <th style="width:30px;">
 
-                                </th>
-                                <th class="sort-th" @onclick="@(() => SortTable("SummonerName"))" style="text-align:left">
-                                    Summoner
-                                    <span class="oi @(SetSortIcon("SummonerName"))"></span>
-                                </th>
-                                <th class="sort-th" @onclick="@(() => SortTable("SummonerLevel"))" style="width:75px;">
-                                    Level
-                                    <span class="oi @(SetSortIcon("SummonerLevel"))"></span>
-                                </th>
-                                <th class="sort-th" @onclick="@(() => SortTable("ChampionsMastered"))">
-                                    Champions Mastered
-                                    <span class="oi @(SetSortIcon("ChampionsMastered"))"></span>
-                                </th>
-                                <th class="sort-th" @onclick="@(() => SortTable("PointsRemaining"))">
-                                    Points Left
-                                    <span class="oi @(SetSortIcon("PointsRemaining"))"></span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (int i = 0; i < leaderboardEntries.Count(); i++)
-                            {
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("SummonerName"))" style="text-align:left">
+                                Summoner
+                                <span class="oi @(SetSortIcon("SummonerName"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("SummonerLevel"))" style="width:75px;">
+                                Level
+                                <span class="oi @(SetSortIcon("SummonerLevel"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("ChampionsMastered"))">
+                                Champions Mastered
+                                <span class="oi @(SetSortIcon("ChampionsMastered"))"></span>
+                            </th>
+                            <th class="sort-th" @onclick="@(() => SortTable("PointsRemaining"))">
+                                Points Left
+                                <span class="oi @(SetSortIcon("PointsRemaining"))"></span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < leaderboardEntries.Count(); i++)
+                        {
                             <tr>
                                 <td>@(i+1)</td>
                                 <td>
@@ -58,11 +58,11 @@
                                 <td>@leaderboardEntries[i].ChampionsMastered</td>
                                 <td>@leaderboardEntries[i].PointsRemaining (@leaderboardEntries[i].PointsRemainingPercentage.ToString("F")%)</td>
                             </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                        }
+                    </tbody>
+                </table>
             </div>
+        </div>
     }
 </div>
 
@@ -78,11 +78,10 @@
         public int ChampionsMastered { get; set; }
         public double PointsRemainingPercentage { get; set; }
     }
-    const string apiKey = "RGAPI-1636d837-2d72-455b-9c14-414f5de35d1e";
+    private static string apiKey = System.Environment.GetEnvironmentVariable("apiKey");
     private RiotApi api = RiotApi.GetInstance(apiKey, 80, 350);
     RiotSharp.Endpoints.StaticDataEndpoint.Champion.ChampionListStatic championList;
 
-    //https://eun1.api.riotgames.com/lol/summoner/v4/summoners/by-name/ <name> ?api_key=RGAPI-1636d837-2d72-455b-9c14-414f5de35d1e
     string[] summonerNamesList = { "3PD_oHwLP0F_Avs6q_o5v_CygM3T3C5gSw3TUiHdB71pDQsfYlM332-hb2tQR3XbOLpxRT8FPt-J1w", "wjruot6N2Cv48s05DpyFi9pdVrZUTOgqiyh1g7CFo7VtXaIkx2Ot-UC93GjhvSJopIXXz-7Ggy_ibA", "0wmX92IudW1Nh-bm6XnHCYI2fSU0u_alFPWv1t-nLJ_i60oaGjryVbs_hiCRWFh19nCkh4ty_cJu_Q", "vRO6uAmdIMcCfkyA5cLFhCHeV1avByCOXxjXyhtaGkWBHdwf_WiB9xb4_oSitfws3TdzK-o6W8sYVw", "mFAxCL89g18_t7owyF6CB-3nB6SAO6_X5feLE3dzZ1PxFXZYCaq2m_n6B63UrX0zf9yiyakKZv8znA", "q3pf4vnDMLi1NyYP6HCR2UoKzBr2M_WGSbLhx1GCyPOST3zvQWfatg2p_YvVmbpFeCpAOBKDQ6OsAg", "1FWmtYPzqmmC452g1HC8Sq3kquZOQ8-8v_YQy7cr9Zp0CcB9n2idmQbB-aiJfxccuVwZH3RlnRpLWw", "x_Sp9NeQQJct_JshHnbiITHz63LXM765WFfMInfkHSC9liXTh-DFp-PiWTf_1ui0m6SzE7XADPtWNw", "BLws2Jcbf3oVz5_nC_P0Fs3_kBxe-Obuml52QvBi9tSQUdmjaa0AAbe6XIvHffPZkZkO_Awwx4zwaA", "7B8rEsnt2qMtyZZaE-6N50Ko6xH1HH03DemE8ZR8r8TbZdh64OGasGPSYhI4Hx9B03jGr4bnOKe5PA", "STRwPbAT2Ny84bK4aMx1QeGTFpVaQneDtkbvxVoga8Hge73kHibXS0ZrLFvVGoybtyRqc3L3DdCubw", "OcmChJdlo27sTaaiIk9g6K62f9aMI7K6lL6xT9Jr5zTv60anVbWOfa0npwYVS6FcE70hnI1NtcETUA", "A1BfIKTAqXsOFac3jZT-2DLlb8umvV4oDFkQKmGIcFKQDEAsaz13h5wf8q5N7B1g-JZQUoqi56OBnQ", "bLQfUIPEJrgMIBToEHrWTEbys-6r4VY50N4bG4qQBl6bDXNfSyH-ORBJoOu851Nr55UjVh5iKOppEg", "eaqdXQES9OFZlRz13ZIY6jqTlubrbi9y05By0G_wRUGyN9Kra1SGLzTMPFJGiK4lEvg1DDJmWHiGTw", "8MTtg2GAk_rk-N-8_z_Yuk4jc8ySRBooFWtJ8sjnMh9iIpRr6j0qn3tsDZLHsxtC4Uom-AR7ZE1fRw", "jvlxjQn9bLs0ZCoANkNYax_qXIdEjAj-mSRqu6dTdgJHXIcfZY7E3SGmFoUJkFnpxtFRwGyFHjafCw", "-J5e_dPtuRdx1IgbaG1IvdC79jHvwUTIXOWQ3BiNitw2dkLvEHkKAWD95bPedFKzEnA_T_sJWlBSsQ", "q1RCqHDOyGUTIHAXOTAAsVGORh0eZLnjVhj5T10ipiDaC2pXsf7NTKWnLdJamkcoq6-13-Ci3e7HBA" };
     List<LeaderboardEntry> leaderboardEntries = new List<LeaderboardEntry>();
     private bool IsLoading { get; set; } = true;
@@ -127,7 +126,7 @@
                     entry.SummonerLevel = summoner.Level;
                     entry.PointsRemaining = CalculateRemainingPoints(championMasteries);
                     int[] championsOnLevel = await CountAmountOfChampionsOnEachLevel(championMasteries);
-                    entry.ChampionsMastered = championsOnLevel[5]+championsOnLevel[6]+championsOnLevel[7];
+                    entry.ChampionsMastered = championsOnLevel[5] + championsOnLevel[6] + championsOnLevel[7];
                     entry.PointsRemainingPercentage = await CalculateRemainingPointsPercentage(entry.PointsRemaining);
 
                     leaderboardEntries.Add(entry);
@@ -279,4 +278,3 @@
         }
     }
 }
-//
